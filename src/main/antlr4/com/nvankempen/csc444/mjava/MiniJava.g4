@@ -67,3 +67,7 @@ BOOLEAN_LITERAL
     : 'true'
     | 'false'
 ;
+
+WS
+    : [ \r\t\n]+ -> skip
+;
