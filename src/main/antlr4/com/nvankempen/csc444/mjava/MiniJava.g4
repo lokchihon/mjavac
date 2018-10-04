@@ -5,26 +5,26 @@ Program
 ;
 
 MainClass
-    : 'class' Identifier '{' 'public' 'static' 'void' 'main' '(' 'String' '[' ']' Identifier ')' '{' Statement '}' '}'
+    : 'class' IDENTIFIER '{' 'public' 'static' 'void' 'main' '(' 'String' '[' ']' IDENTIFIER ')' '{' Statement '}' '}'
 ;
 
 ClassDeclaration
-    : 'class' Identifier ( 'extends' Identifier )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'
+    : 'class' IDENTIFIER ( 'extends' IDENTIFIER )? '{' ( VarDeclaration )* ( MethodDeclaration )* '}'
 ;
 
 VarDeclaration
-    : Type Identifier ';'
+    : Type IDENTIFIER ';'
 ;
 
 MethodDeclaration
-    : 'public' Type Identifier '(' ( Type Identifier ( ',' Type Identifier )* )? ')' '{' ( VarDeclaration )* ( Statement )* 'return' Expression ';' '}'
+    : 'public' Type IDENTIFIER '(' ( Type IDENTIFIER ( ',' Type IDENTIFIER )* )? ')' '{' ( VarDeclaration )* ( Statement )* 'return' Expression ';' '}'
 ;
 
 Type
     : 'int' '[' ']'
     | 'boolean'
     | 'int'
-    | Identifier
+    | IDENTIFIER
 ;
 
 Statement
@@ -32,31 +32,74 @@ Statement
     | 'if' '(' Expression ')' Statement 'else' Statement
     | 'while' '(' Expression ')' Statement
     | 'System.out.println' '(' Expression ')' ';'
-    | Identifier '=' Expression ';'
-    | Identifier '[' Expression ']' '=' Expression ';'
+    | IDENTIFIER '=' Expression ';'
+    | IDENTIFIER '[' Expression ']' '=' Expression ';'
 ;
 
 Expression
-    : Expression '&&' Expression
-    | Expression '<' Expression
-    | Expression '+' Expression
-    | Expression '-' Expression
-    | Expression '*' Expression
-    | Expression '[' Expression ']'
-    | Expression '.' 'length'
-    | Expression '.' Identifier '(' ( Expression ( ',' Expression )* )? ')'
+    : Factor '&&' Expression
+    | ArrayAccess
+    | ArrayLength
+    | MethodCall
+;
+
+Factor
+    : Term '<' Factor
+;
+
+Term
+    : Atom ('+' Term)*
+;
+
+Atom
+    : Nucleus ('-' Atom)*
+;
+
+Nucleus
+    : Proton ('*' Nucleus)*
+;
+
+Proton
+    : '!' Quark
+    | Quark
+;
+
+Quark
+    : BOOLEAN_LITERAL
     | INTEGER_LITERAL
-    | BOOLEAN_LITERAL
-    | Identifier
-    | 'this'
-    | 'new' 'int' '[' Expression ']'
-    | 'new' Identifier '(' ')'
-    | '!' Expression
+    | THIS
+    | NewArray
+    | NewObject
+    | IDENTIFIER
     | '(' Expression ')'
 ;
 
-Identifier
+NewArray
+    : 'new' 'int' '[' Expression ']'
+;
+
+NewObject
+    : 'new' IDENTIFIER '(' ')'
+;
+
+ArrayAccess
+    : Quark '[' Expression ']'
+;
+
+ArrayLength
+    : Quark '.' 'length'
+;
+
+MethodCall
+    : Quark '.' IDENTIFIER '(' ( Expression ( ',' Expression )* )? ')'
+;
+
+IDENTIFIER
     : [a-zA-Z_$] [a-zA-Z0-9_$]*
+;
+
+THIS
+    : 'this'
 ;
 
 INTEGER_LITERAL
