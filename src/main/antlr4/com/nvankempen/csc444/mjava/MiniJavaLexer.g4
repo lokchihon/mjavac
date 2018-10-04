@@ -15,6 +15,7 @@ WHILE:              'while';
 
 INT:                'int';
 BOOLEAN:            'boolean';
+VAR:                'var';
 
 LP:                 '(';
 RP:                 ')';

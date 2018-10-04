@@ -17,7 +17,8 @@ classDeclaration
 ;
 
 varDeclaration
-    : type IDENTIFIER SEMICOLON
+    : type IDENTIFIER SEMICOLON     # TypedDeclaration
+    | VAR IDENTIFIER SEMICOLON      # UnTypedDeclaration
 ;
 
 methodDeclaration
