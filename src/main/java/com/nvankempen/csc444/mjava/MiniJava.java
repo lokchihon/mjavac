@@ -11,9 +11,18 @@ public class MiniJava {
 
         CharStream stream = CharStreams.fromStream(System.in);
         MiniJavaLexer lexer = new MiniJavaLexer(stream);
+
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         MiniJavaParser parser = new MiniJavaParser(tokens);
+
+        ErrorListener errorListener = new ErrorListener();
+        parser.removeErrorListeners();
+        parser.addErrorListener(errorListener);
+
         ParseTree tree = parser.program();
-        System.out.println(tree.toStringTree(parser));
+
+        if (!errorListener.hasSyntaxErrors()) {
+            System.out.println(tree.toStringTree(parser));
+        }
     }
 }

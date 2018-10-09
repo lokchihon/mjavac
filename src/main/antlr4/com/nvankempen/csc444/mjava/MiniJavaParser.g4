@@ -42,6 +42,7 @@ statement
 ;
 
 // Having declarations is this order makes ANTLR figure out precedence and left recursion.
+// We use labels on each expression so that we can differentiate them later.
 expression
     : expression LB expression RB                                               # ArrayAccess
     | expression DOT LENGTH                                                     # ArrayLength
