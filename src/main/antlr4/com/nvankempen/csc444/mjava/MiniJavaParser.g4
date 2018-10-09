@@ -21,8 +21,8 @@ classDeclaration
 ;
 
 varDeclaration
-    : type IDENTIFIER SEMICOLON     # TypedDeclaration
-    | VAR IDENTIFIER SEMICOLON      # UnTypedDeclaration
+    : type IDENTIFIER SEMICOLON                 # TypedDeclaration
+    | VAR IDENTIFIER EQ expression SEMICOLON    # UnTypedDeclaration
 ;
 
 methodDeclaration
