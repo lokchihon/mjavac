@@ -30,4 +30,5 @@ public interface TypeVisitor {
     Type visit(Identifier identifier);
     Type visit(Formal formal);
     Type visit(MainClass main);
+    Type visit(Type type);
 }

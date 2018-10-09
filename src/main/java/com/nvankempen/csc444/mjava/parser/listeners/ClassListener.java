@@ -13,7 +13,7 @@ public class ClassListener extends MiniJavaParserBaseListener {
     @Override
     public void enterClassDeclaration(MiniJavaParser.ClassDeclarationContext ctx) {
         String name = ctx.IDENTIFIER(0).getText();
-        String superclass = ctx.IDENTIFIER(1).getText();
+        String superclass = (ctx.EXTENDS() != null) ? ctx.IDENTIFIER(1).getText() : null;
 
         VarListener variables = new VarListener();
         ctx.varDeclaration().forEach(variable -> variable.enterRule(variables));

@@ -26,14 +26,18 @@ varDeclaration
 ;
 
 methodDeclaration
-    : PUBLIC type IDENTIFIER LP ( type IDENTIFIER ( COMMA type IDENTIFIER )* )? RP LC ( varDeclaration )* ( statement )* RETURN expression SEMICOLON RC
+    : PUBLIC type IDENTIFIER LP parameters RP LC ( varDeclaration )* ( statement )* RETURN expression SEMICOLON RC
+;
+
+parameters
+    : ( type IDENTIFIER ( COMMA type IDENTIFIER )* )?
 ;
 
 type
-    : INT LB RB
-    | BOOLEAN
-    | INT
-    | IDENTIFIER
+    : INT LB RB     # IntArrayType
+    | BOOLEAN       # BooleanType
+    | INT           # IntType
+    | IDENTIFIER    # IdentifierType
 ;
 
 statement

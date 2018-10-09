@@ -189,4 +189,9 @@ public class DepthFirstTypeVisitor implements TypeVisitor {
     public Type visit(MainClass main) {
         return null;
     }
+
+    @Override
+    public Type visit(Type type) {
+        return null;
+    }
 }
