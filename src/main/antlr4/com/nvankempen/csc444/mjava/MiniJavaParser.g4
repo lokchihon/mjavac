@@ -9,7 +9,11 @@ program
 ;
 
 mainClass
-    : CLASS IDENTIFIER LC PUBLIC STATIC VOID MAIN LP STRING LB RB IDENTIFIER RP LC statement RC RC
+    : CLASS IDENTIFIER LC mainMethod RC
+;
+
+mainMethod
+    : PUBLIC STATIC VOID MAIN LP STRING LB RB IDENTIFIER RP LC statement RC
 ;
 
 classDeclaration
@@ -33,18 +37,18 @@ type
 ;
 
 statement
-    : LC ( statement )* RC
-    | IF LP expression RP statement ( ELSE statement )?
-    | WHILE LP expression RP statement
-    | PRINT LP expression RP SEMICOLON
-    | IDENTIFIER EQ expression SEMICOLON
-    | IDENTIFIER LB expression RB EQ expression SEMICOLON
+    : LC ( statement )* RC                                      # StatementBlock
+    | IF LP expression RP statement ( ELSE statement )?         # IfStatement
+    | WHILE LP expression RP statement                          # WhileStatement
+    | PRINT LP expression RP SEMICOLON                          # PrintStatement
+    | IDENTIFIER EQ expression SEMICOLON                        # VarAssignStatement
+    | IDENTIFIER LB expression RB EQ expression SEMICOLON       # ArrayAssignStatement
 ;
 
-// Having declarations is this order makes ANTLR figure out precedence and left recursion.
+// Having variables is this order makes ANTLR figure out precedence and left recursion.
 // We use labels on each expression so that we can differentiate them later.
 expression
-    : expression LB expression RB                                               # ArrayAccess
+    : expression LB expression RB                                               # ArrayLookup
     | expression DOT LENGTH                                                     # ArrayLength
     | expression DOT IDENTIFIER LP ( expression ( COMMA expression )* )? RP     # MethodCall
     | NOT expression                                                            # Not
