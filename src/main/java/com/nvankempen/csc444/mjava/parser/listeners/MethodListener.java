@@ -30,7 +30,6 @@ public class MethodListener extends MiniJavaParserBaseListener {
         VarListener variables = new VarListener();
         ctx.varDeclaration().forEach(variable -> variable.enterRule(variables));
 
-
         StatementList statements = new StatementList();
 
         for (MiniJavaParser.StatementContext statement : ctx.statement()) {
