@@ -14,6 +14,10 @@ public class If extends Statement {
         this.falseStatement = falseStatement;
     }
 
+    public If(Expression condition, Statement statement) {
+        this(condition, statement, null);
+    }
+
     public Expression getCondition() {
         return condition;
     }

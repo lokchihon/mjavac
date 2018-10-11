@@ -1,5 +1,7 @@
 package com.nvankempen.csc444.mjava;
 
+import com.nvankempen.csc444.mjava.ast.AST;
+import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -18,7 +20,7 @@ public class MiniJava {
         ParseTree tree = parser.program();
 
         if (!errorListener.hasSyntaxErrors()) {
-            System.out.println(tree.toStringTree(parser));
+            AST ast = (new VisitorParser()).parse(tree);
         }
     }
 }
