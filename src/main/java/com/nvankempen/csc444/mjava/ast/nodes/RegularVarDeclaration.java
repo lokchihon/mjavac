@@ -4,17 +4,11 @@ import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
 import org.antlr.v4.runtime.Token;
 
-public class UntypedVarDeclaration extends VarDeclaration {
-    private Expression value;
+public class RegularVarDeclaration extends VarDeclaration {
     private Type type;
 
-    public UntypedVarDeclaration(Identifier name, Expression value, Token start, Token stop) {
+    public RegularVarDeclaration(Type type, Identifier name, Token start, Token stop) {
         super(name, start, stop);
-        this.value = value;
-    }
-
-    @Override
-    public void setType(Type type) {
         this.type = type;
     }
 
@@ -23,8 +17,9 @@ public class UntypedVarDeclaration extends VarDeclaration {
         return type;
     }
 
-    public Expression getValue() {
-        return value;
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     public void accept(Visitor v) {

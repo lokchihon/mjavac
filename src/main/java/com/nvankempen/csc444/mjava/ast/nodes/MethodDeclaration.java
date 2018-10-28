@@ -1,23 +1,37 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import org.antlr.v4.runtime.Token;
+
+import java.util.List;
 
 public class MethodDeclaration {
     private Type type;
     private Identifier name;
-    private FormalList parameters;
-    private VarDeclarationList variables;
-    private StatementList statements;
+    private List<Formal> parameters;
+    private List<VarDeclaration> variables;
+    private List<Statement> statements;
     private Expression returnStatement;
+    private Token start, stop;
 
-    public MethodDeclaration(Type type, Identifier name, FormalList parameters, VarDeclarationList variables, StatementList statements, Expression returnStatement) {
+    public Token getStart() {
+        return start;
+    }
+
+    public Token getStop() {
+        return stop;
+    }
+
+    public MethodDeclaration(Type type, Identifier name, List<Formal> parameters, List<VarDeclaration> variables, List<Statement> statements, Expression returnStatement, Token start, Token stop) {
         this.type = type;
         this.name = name;
         this.parameters = parameters;
         this.variables = variables;
         this.statements = statements;
         this.returnStatement = returnStatement;
+        this.start = start;
+        this.stop = stop;
     }
 
     public Type getType() {
@@ -28,15 +42,15 @@ public class MethodDeclaration {
         return name;
     }
 
-    public FormalList getParameters() {
+    public List<Formal> getParameters() {
         return parameters;
     }
 
-    public VarDeclarationList getVariables() {
+    public List<VarDeclaration> getVariables() {
         return variables;
     }
 
-    public StatementList getStatements() {
+    public List<Statement> getStatements() {
         return statements;
     }
 

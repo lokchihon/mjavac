@@ -1,11 +1,12 @@
-package com.nvankempen.csc444.mjava.ast;
+package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
 
 public interface TypeVisitor {
     Type visit(Program program);
     Type visit(ClassDeclaration declaration);
-    Type visit(VarDeclaration declaration);
+    Type visit(RegularVarDeclaration declaration);
+    Type visit(UntypedVarDeclaration declaration);
     Type visit(MethodDeclaration declaration);
     Type visit(Block block);
     Type visit(If statement);

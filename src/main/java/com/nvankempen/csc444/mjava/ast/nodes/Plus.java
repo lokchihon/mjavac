@@ -1,14 +1,34 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import org.antlr.v4.runtime.Token;
 
 public class Plus extends Expression {
     private Expression left, right;
+    private Token start, stop;
 
-    public Plus(Expression left, Expression right) {
+    public Token getStart() {
+        return start;
+    }
+
+    public Token getStop() {
+        return stop;
+    }
+
+    public Plus(Expression left, Expression right, Token start, Token stop) {
         this.left = left;
         this.right = right;
+        this.start = start;
+        this.stop = stop;
+    }
+
+    public Expression getRight() {
+        return right;
+    }
+
+    public Expression getLeft() {
+        return left;
     }
 
     public void accept(Visitor v) {

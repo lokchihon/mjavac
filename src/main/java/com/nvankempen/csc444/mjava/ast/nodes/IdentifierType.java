@@ -1,7 +1,7 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
 
 public class IdentifierType extends Type {
 
@@ -13,6 +13,11 @@ public class IdentifierType extends Type {
 
     public Identifier getIdentifier() {
         return type;
+    }
+
+    @Override
+    public String getName() {
+        return getIdentifier().getName();
     }
 
     @Override

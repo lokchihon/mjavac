@@ -1,10 +1,8 @@
 package com.nvankempen.csc444.mjava.parser;
 
-import com.nvankempen.csc444.mjava.ast.AST;
+import com.nvankempen.csc444.mjava.ast.nodes.Program;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.io.IOException;
-
 public abstract class Parser {
-    public abstract AST parse(ParseTree input) throws IOException;
+    public abstract Program parse(ParseTree input);
 }

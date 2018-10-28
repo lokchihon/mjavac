@@ -1,30 +1,46 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import org.antlr.v4.runtime.Token;
 
-public class VarDeclaration {
-    private Type type;
+public abstract class VarDeclaration {
     private Identifier name;
+    private Token start, stop;
 
-    public VarDeclaration(Type type, Identifier name) {
-        this.type = type;
-        this.name = name;
+    public Token getStart() {
+        return start;
     }
 
-    public Type getType() {
-        return type;
+    public Token getStop() {
+        return stop;
+    }
+
+    public VarDeclaration(Identifier name, Token start, Token stop) {
+        this.name = name;
+        this.start = start;
+        this.stop = stop;
     }
 
     public Identifier getName() {
         return name;
     }
 
-    public void accept(Visitor v) {
-        v.visit(this);
+    public abstract Type getType();
+
+    public abstract void setType(Type type);
+
+    public abstract void accept(Visitor v);
+
+    public abstract Type accept(TypeVisitor v);
+
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof VarDeclaration) && name.equals(((VarDeclaration) obj).name);
     }
 
-    public Type accept(TypeVisitor v) {
-        return v.visit(this);
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 }

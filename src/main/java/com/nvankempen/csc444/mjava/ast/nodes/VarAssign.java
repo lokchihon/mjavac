@@ -1,15 +1,27 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import org.antlr.v4.runtime.Token;
 
 public class VarAssign extends Statement {
     private Identifier variable;
     private Expression value;
+    private Token start, stop;
 
-    public VarAssign(Identifier variable, Expression value) {
+    public Token getStart() {
+        return start;
+    }
+
+    public Token getStop() {
+        return stop;
+    }
+
+    public VarAssign(Identifier variable, Expression value, Token start, Token stop) {
         this.variable = variable;
         this.value = value;
+        this.start = start;
+        this.stop = stop;
     }
 
     public Identifier getVariable() {

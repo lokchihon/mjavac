@@ -1,16 +1,30 @@
 package com.nvankempen.csc444.mjava.ast.nodes;
 
-import com.nvankempen.csc444.mjava.ast.TypeVisitor;
-import com.nvankempen.csc444.mjava.ast.Visitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import org.antlr.v4.runtime.Token;
+
+import java.util.List;
 
 public class Block extends Statement {
-    private StatementList statements;
+    private List<Statement> statements;
+    private Token start, stop;
 
-    public Block(StatementList statements) {
-        this.statements = statements;
+    public Token getStart() {
+        return start;
     }
 
-    public StatementList getStatements() {
+    public Token getStop() {
+        return stop;
+    }
+
+    public Block(List<Statement> statements, Token start, Token stop) {
+        this.statements = statements;
+        this.start = start;
+        this.stop = stop;
+    }
+
+    public List<Statement> getStatements() {
         return statements;
     }
 
