@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.Token;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class TypeScopeCheckVisitor implements TypeVisitor {
+public class TypeCheckVisitor implements TypeVisitor {
 
     private ClassDeclaration current;
     private Map<Identifier, Type> instance;

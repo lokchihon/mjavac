@@ -1,7 +1,7 @@
 package com.nvankempen.csc444.mjava;
 
 import com.nvankempen.csc444.mjava.ast.analysis.PrintVisitor;
-import com.nvankempen.csc444.mjava.ast.analysis.TypeScopeCheckVisitor;
+import com.nvankempen.csc444.mjava.ast.analysis.TypeCheckVisitor;
 import com.nvankempen.csc444.mjava.ast.nodes.Program;
 import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
@@ -24,7 +24,7 @@ public class MiniJava {
             Program program = (new VisitorParser()).parse(tree);
             PrintVisitor print = new PrintVisitor(System.out);
             print.visit(program);
-            TypeScopeCheckVisitor check = new TypeScopeCheckVisitor();
+            TypeCheckVisitor check = new TypeCheckVisitor();
             check.visit(program);
         }
     }
