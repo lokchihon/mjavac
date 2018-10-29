@@ -1,6 +1,7 @@
 package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.ast.utils.Type;
 
 public interface Visitor {
     void visit(Program program);

@@ -2,6 +2,7 @@ package com.nvankempen.csc444.mjava.ast.nodes;
 
 import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import com.nvankempen.csc444.mjava.ast.utils.Type;
 import org.antlr.v4.runtime.Token;
 
 public class Identifier extends Expression {
@@ -12,11 +13,8 @@ public class Identifier extends Expression {
         return token;
     }
 
-    public Identifier(String name) {
-        this.name = name;
-    }
-
     public Identifier(String name, Token token) {
+        super(null, null);
         this.name = name;
         this.token = token;
     }

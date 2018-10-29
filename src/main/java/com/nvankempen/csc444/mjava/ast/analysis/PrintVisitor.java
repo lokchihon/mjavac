@@ -1,6 +1,7 @@
 package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.ast.utils.Type;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -166,7 +167,7 @@ public class PrintVisitor implements Visitor {
     @Override
     public void visit(And expression) {
         expression.getLeft().accept(this);
-        printni("&& ");
+        printni(" && ");
         expression.getRight().accept(this);
     }
 

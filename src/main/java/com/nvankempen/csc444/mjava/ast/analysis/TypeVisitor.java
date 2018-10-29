@@ -1,6 +1,7 @@
 package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.ast.utils.Type;
 
 public interface TypeVisitor {
     Type visit(Program program);
@@ -31,5 +32,4 @@ public interface TypeVisitor {
     Type visit(Identifier identifier);
     Type visit(Formal formal);
     Type visit(MainClass main);
-    Type visit(Type type);
 }

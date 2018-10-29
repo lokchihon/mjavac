@@ -1,6 +1,9 @@
 package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.ast.utils.*;
+import org.antlr.v4.runtime.Token;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -11,10 +14,28 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     private Map<Identifier, Type> method;
     private Map<Identifier, Type> parameters;
 
+    private void error(Token start, Token stop, String format, Object... args) {
+        if (start == stop) {
+            error(start, format, args);
+        } else {
+            System.out.printf(String.format("[%d:%d - %d:%d] %s %n",
+                    start.getLine(), start.getCharPositionInLine(),
+                    stop.getLine(), stop.getCharPositionInLine(),
+                    format
+            ), args);
+        }
+    }
+
+    private void error(Token token, String format, Object... args) {
+        System.out.printf(String.format("[%d:%d] %s %n", token.getLine(), token.getCharPositionInLine(), format), args);
+    }
+
     @Override
     public Type visit(Program program) {
         // TODO We need to build a type table or something.
         // TODO Check for duplicate classes. Maybe do so in the visit(ClassDeclaration) by saving program as instance?
+        program.getMainClass().accept(this);
+        program.getClasses().forEach(c -> c.accept(this));
         return null;
     }
 
@@ -89,7 +110,10 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(If statement) {
-        // TODO Check if condition is a boolean
+        Type condition = statement.getCondition().accept(this);
+        if (!condition.isBoolean()) {
+            error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
+        }
 
         statement.getTrueStatement().accept(this);
         if (statement.hasFalseStatement()) statement.getFalseStatement().accept(this);
@@ -99,7 +123,10 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(While statement) {
-        // TODO Check if condition is a boolean
+        Type condition = statement.getCondition().accept(this);
+        if (!condition.isBoolean()) {
+            error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
+        }
 
         statement.getStatement().accept(this);
         return null;
@@ -107,7 +134,11 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(Print statement) {
-        // TODO Check if expression is an integer
+        Type type = statement.getExpression().accept(this);
+        if (!type.isInt()) {
+            error(statement.getExpression().getStart(), statement.getExpression().getStop(), "Expected an integer. Got a(n) %s.", type.getName());
+        }
+
         return null;
     }
 
@@ -115,17 +146,30 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     public Type visit(VarAssign statement) {
         Type variable = statement.getVariable().accept(this);
         Type expression = statement.getValue().accept(this);
-        // TODO Check if types match
+
+        if (!variable.equals(expression)) {
+            error(statement.getStart(), statement.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), variable.getName());
+        }
+
         return null;
     }
 
     @Override
     public Type visit(ArrayAssign statement) {
-        Type variable = statement.getArray().accept(this);
-        // TODO check if variable is int[]
+        Type array = statement.getArray().accept(this);
         Type index = statement.getIndex().accept(this);
         Type value = statement.getValue().accept(this);
-        // TODO Check if both are ints.
+
+        if (!array.isIntArray()) {
+            error(statement.getArray().getStart(), statement.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+        }
+        if (!index.isInt()) {
+            error(statement.getIndex().getStart(), statement.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
+        }
+        if (!value.isInt()) {
+            error(statement.getValue().getStart(), statement.getValue().getStop(), "Expected an integer. Got a(n) %s.", value.getName());
+        }
+
         return null;
     }
 
@@ -133,14 +177,29 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     public Type visit(And expression) {
         Type left = expression.getLeft().accept(this);
         Type right = expression.getRight().accept(this);
-        // TODO Check if both are booleans
-        return new BooleanType();
+
+        if (!left.isBoolean()) {
+            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected a boolean. Got a(n) %s.", left.getName());
+        }
+
+        if (!right.isBoolean()) {
+            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected a boolean. Got a(n) %s.", right.getName());
+        }
+
+        if (right.isBoolean() && left.isBoolean()) {
+            return new BooleanType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(Not expression) {
         Type type = expression.getExpression().accept(this);
-        // TODO Check if type is boolean
+        if (!type.isBoolean()) {
+            error(expression.getExpression().getStart(), expression.getExpression().getStop(), "Expected a boolean. Got a(n) %s.", type.getName());
+            return new UnknownType();
+        }
         return new BooleanType();
     }
 
@@ -148,46 +207,111 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     public Type visit(LessThan expression) {
         Type left = expression.getLeft().accept(this);
         Type right = expression.getRight().accept(this);
-        // TODO Check if both are ints
-        return new BooleanType();
+
+        if (!left.isInt()) {
+            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (!right.isInt()) {
+            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (right.isBoolean() && left.isBoolean()) {
+            return new BooleanType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(Plus expression) {
         Type left = expression.getLeft().accept(this);
         Type right = expression.getRight().accept(this);
-        // TODO Check if both are ints
-        return new IntegerType();
+
+        if (!left.isInt()) {
+            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (!right.isInt()) {
+            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (right.isBoolean() && left.isBoolean()) {
+            return new IntegerType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(Minus expression) {
         Type left = expression.getLeft().accept(this);
         Type right = expression.getRight().accept(this);
-        // TODO Check if both are ints
-        return new IntegerType();
+
+        if (!left.isInt()) {
+            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (!right.isInt()) {
+            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (right.isBoolean() && left.isBoolean()) {
+            return new IntegerType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(Times expression) {
         Type left = expression.getLeft().accept(this);
         Type right = expression.getRight().accept(this);
-        // TODO Check if both are ints
-        return new IntegerType();
+
+        if (!left.isInt()) {
+            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (!right.isInt()) {
+            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+        }
+
+        if (right.isBoolean() && left.isBoolean()) {
+            return new IntegerType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(ArrayLookup expression) {
         Type array = expression.getArray().accept(this);
         Type index = expression.getIndex().accept(this);
-        // TODO Check if array is int[], index is int.
-        // We only have int arrays.
-        return new IntegerType();
+
+        if (!array.isIntArray()) {
+            error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+        }
+
+        if (!index.isInt()) {
+            error(expression.getIndex().getStart(), expression.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
+        }
+
+        if (array.isIntArray() && index.isInt()) {
+            return new IntegerType();
+        }
+
+        return new UnknownType();
     }
 
     @Override
     public Type visit(ArrayLength expression) {
-        // TODO Check if expression is int
+        Type array = expression.getArray().accept(this);
+
+        if (!array.isIntArray()) {
+            error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+            return new UnknownType();
+        }
+
         return new IntegerType();
     }
 
@@ -213,8 +337,12 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(NewArray expression) {
-        Type length = expression.accept(this);
-        // TODO Check length is an int
+        Type length = expression.getLength().accept(this);
+
+        if (!length.isInt()) {
+            error(expression.getLength().getStart(), expression.getLength().getStop(), "Expected an integer. Got a(n) %s.", length.getName());
+        }
+
         return new IntegerArrayType();
     }
 
@@ -248,11 +376,6 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
         parameters = new HashMap<>();
 
         main.getStatement().accept(this);
-        return null;
-    }
-
-    @Override
-    public Type visit(Type type) {
         return null;
     }
 }

@@ -4,6 +4,7 @@ import static com.nvankempen.csc444.mjava.MiniJavaParser.*;
 
 import com.nvankempen.csc444.mjava.MiniJavaParserBaseVisitor;
 import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.ast.utils.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import java.util.ArrayList;

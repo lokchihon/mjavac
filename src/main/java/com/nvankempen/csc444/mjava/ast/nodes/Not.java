@@ -2,24 +2,15 @@ package com.nvankempen.csc444.mjava.ast.nodes;
 
 import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
+import com.nvankempen.csc444.mjava.ast.utils.Type;
 import org.antlr.v4.runtime.Token;
 
 public class Not extends Expression {
     private Expression expression;
-    private Token start, stop;
-
-    public Token getStart() {
-        return start;
-    }
-
-    public Token getStop() {
-        return stop;
-    }
 
     public Not(Expression expression, Token start, Token stop) {
+        super(start, stop);
         this.expression = expression;
-        this.start = start;
-        this.stop = stop;
     }
 
     public Expression getExpression() {
