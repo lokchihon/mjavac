@@ -232,6 +232,9 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(VarAssign statement) {
+        // TODO
+        // Currently, Test t = new Test2(); t.test(); will match Test() in the Test class even if overriden in Test2.
+        // Java does it differently, and calls Test2::test.
         Type variable = statement.getVariable().accept(this);
         Type expression = statement.getValue().accept(this);
 
