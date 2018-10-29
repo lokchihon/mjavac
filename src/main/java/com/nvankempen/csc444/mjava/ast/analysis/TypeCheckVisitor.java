@@ -10,9 +10,11 @@ import java.util.stream.Collectors;
 public class TypeCheckVisitor implements TypeVisitor {
 
     private ClassDeclaration current;
+    private Map<Identifier, ClassDeclaration> classes;
     private Map<Identifier, Type> instance;
     private Map<Identifier, Type> method;
     private Map<Identifier, Type> parameters;
+    private List<Type> types;
 
     private void setUnknown(Identifier name) {
         if (parameters.containsKey(name)) {
@@ -48,10 +50,23 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(Program program) {
-        // TODO We need to build a type table or something.
-        // TODO Check for duplicate classes. Maybe do so in the visit(ClassDeclaration) by saving program as instance?
+        classes = new HashMap<>();
+
         program.getMainClass().accept(this);
+
+        // Build type table
+        for (ClassDeclaration declaration : program.getClasses()) {
+            if (classes.containsKey(declaration.getName())) {
+                error(declaration.getName().getStart(), "The class %s has already been declared line %d.", classes.get(declaration.getName()).getName().getStart().getLine());
+            } else if (program.getMainClass().getName().equals(declaration.getName())) {
+                error(declaration.getName().getStart(), "The class %s has already been declared line %d.", program.getMainClass().getName().getStart().getLine());
+            } else {
+                classes.put(declaration.getName(), declaration);
+            }
+        }
+
         program.getClasses().forEach(c -> c.accept(this));
+
         return null;
     }
 
@@ -78,7 +93,20 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(RegularVarDeclaration declaration) {
-        // TODO Check if type exists.
+        // Check if type exists.
+        Type type = declaration.getType();
+        if (!(type.isInt() || type.isIntArray() || type.isBoolean())) {
+            for (Identifier name : classes.keySet()) {
+                if (name.getName().equals(type.getName())) {
+                    return null;
+                }
+            }
+
+            error(declaration.getStart(), declaration.getStop(), "The type %s does not exist.", declaration.getType().getName());
+            declaration.setType(new UnknownType());
+            return null;
+        }
+
         return null;
     }
 
@@ -396,7 +424,20 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(Formal formal) {
-        // TODO Check if type exists
+        // Check if type exists.
+        Type type = formal.getType();
+        if (!(type.isInt() || type.isIntArray() || type.isBoolean())) {
+            for (Identifier name : classes.keySet()) {
+                if (name.getName().equals(type.getName())) {
+                    return null;
+                }
+            }
+
+            error(formal.getStart(), formal.getStop(), "The type %s does not exist.", formal.getType().getName());
+            formal.setType(new UnknownType());
+            return null;
+        }
+
         return null;
     }
 

@@ -29,6 +29,10 @@ public class Formal {
         return type;
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     public Identifier getName() {
         return name;
     }
