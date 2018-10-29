@@ -2,9 +2,7 @@ package com.nvankempen.csc444.mjava.ast.utils;
 
 import com.nvankempen.csc444.mjava.ast.nodes.ClassDeclaration;
 import com.nvankempen.csc444.mjava.ast.nodes.Identifier;
-
 import java.util.Map;
-import java.util.Objects;
 
 public abstract class Type {
     public abstract String getName();
