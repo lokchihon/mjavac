@@ -3,6 +3,7 @@ package com.nvankempen.csc444.mjava.ast.analysis;
 import com.nvankempen.csc444.mjava.ast.nodes.*;
 import com.nvankempen.csc444.mjava.ast.utils.*;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.misc.Pair;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -14,7 +15,6 @@ public class TypeCheckVisitor implements TypeVisitor {
     private Map<Identifier, Type> instance;
     private Map<Identifier, Type> method;
     private Map<Identifier, Type> parameters;
-    private List<Type> types;
 
     private void setUnknown(Identifier name) {
         if (parameters.containsKey(name)) {
@@ -41,7 +41,7 @@ public class TypeCheckVisitor implements TypeVisitor {
     }
 
     private void error(Token token, String format, Object... args) {
-        System.out.printf(String.format("[%d:%d] %s %n",
+        System.out.printf(String.format("[%d:%d] ERROR %s %n",
                 token.getLine(),
                 token.getCharPositionInLine(),
                 format
@@ -51,8 +51,6 @@ public class TypeCheckVisitor implements TypeVisitor {
     @Override
     public Type visit(Program program) {
         classes = new HashMap<>();
-
-        program.getMainClass().accept(this);
 
         // Build type table
         for (ClassDeclaration declaration : program.getClasses()) {
@@ -65,6 +63,7 @@ public class TypeCheckVisitor implements TypeVisitor {
             }
         }
 
+        program.getMainClass().accept(this);
         program.getClasses().forEach(c -> c.accept(this));
 
         return null;
@@ -72,20 +71,57 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(ClassDeclaration declaration) {
-        // TODO Validate superclass
+        if (declaration.hasSuperClass() && !classes.containsKey(declaration.getSuperclass())) {
+            error(declaration.getSuperclass().getStart(), "The class %s does not exist.", declaration.getSuperclass().getName());
+            declaration.setSuperclass(null);
+        }
+
+        if (declaration.hasSuperClass() && declaration.getSuperclass().getName().equals(declaration.getName().getName())) {
+            error(declaration.getSuperclass().getStart(), "A class cannot be a child of itself.");
+            declaration.setSuperclass(null);
+        }
 
         current = declaration;
         instance = new HashMap<>();
 
-        // TODO Check for duplicate instance variables.
         for (VarDeclaration variable : declaration.getVariables()) {
             variable.accept(this);
-            instance.put(variable.getName(), variable.getType());
+            if (instance.containsKey(variable.getName())) {
+                error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
+                setUnknown(variable.getName());
+            } else {
+                instance.put(variable.getName(), variable.getType());
+            }
         }
 
-        // TODO Check for duplicate methods
-        for (MethodDeclaration method : declaration.getMethods()) {
-            method.accept(this);
+        List<MethodDeclaration> methods = declaration.getMethods();
+        for (int i = 0; i < methods.size(); ++i) {
+            for (int j = i + 1; j < methods.size(); ++j) {
+                if (methods.get(i).getName().equals(methods.get(j).getName()) && methods.get(i).getParameters().size() == methods.get(j).getParameters().size()) {
+                    // Both methods have the same name.
+                    boolean different = false;
+                    for (int k = 0; k < methods.get(i).getParameters().size(); ++k) {
+                        if (!methods.get(i).getParameters().get(k).getType().equals(methods.get(j).getParameters().get(k).getType())) {
+                            different = true;
+                            break;
+                        }
+                    }
+
+                    if (!different) {
+                        error(
+                                methods.get(i).getStart(), methods.get(i).getStop(),
+                                "%s(%s) already exists.",
+                                methods.get(i).getName(),
+                                String.join(", ", methods.get(i).getParameters().stream().map(x -> x.getType().getName()).collect(Collectors.toList()))
+                        );
+
+                        methods.get(i).setType(new UnknownType());
+                        methods.get(j).setType(new UnknownType());
+                    }
+                }
+            }
+
+            methods.get(i).accept(this);
         }
 
         return null;
@@ -121,17 +157,22 @@ public class TypeCheckVisitor implements TypeVisitor {
         method = new HashMap<>();
         parameters = new HashMap<>();
 
-        // TODO Check for duplicate methods.
         for (Formal parameter : declaration.getParameters()) {
             parameter.accept(this);
-            parameters.put(parameter.getName(), parameter.getType());
+            if (parameters.containsKey(parameter.getName())) {
+                error(parameter.getStart(), parameter.getStop(), "Parameter %s has already been defined in this scope.", parameter.getName());
+            } else {
+                parameters.put(parameter.getName(), parameter.getType());
+            }
         }
 
-        // TODO Check for duplicate variables
-        // TODO Check if variable not already in Parameters
         for (VarDeclaration variable : declaration.getVariables()) {
             variable.accept(this);
-            method.put(variable.getName(), variable.getType());
+            if (parameters.containsKey(variable.getName()) || method.containsKey(variable.getName())) {
+                error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
+            } else {
+                method.put(variable.getName(), variable.getType());
+            }
         }
 
         for (Statement statement : declaration.getStatements()) {
@@ -139,7 +180,10 @@ public class TypeCheckVisitor implements TypeVisitor {
         }
 
         Type ret = declaration.getReturn().accept(this);
-        // TODO Check if ret matches declared type.
+        if (!ret.equals(declaration.getType())) {
+            error(declaration.getReturn().getStart(), declaration.getReturn().getStop(), "Method declares returning a(n) %s, but returns a(n) %s.", declaration.getType().getName(), ret.getName());
+            declaration.setType(new UnknownType());
+        }
 
         return null;
     }
@@ -191,7 +235,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type variable = statement.getVariable().accept(this);
         Type expression = statement.getValue().accept(this);
 
-        if (!variable.equals(expression)) {
+        if (expression.conformsTo(variable, classes) == -1) {
             error(statement.getStart(), statement.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), variable.getName());
             setUnknown(statement.getVariable());
         }
@@ -365,8 +409,56 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type exp = expression.getObject().accept(this);
         List<Type> arguments = expression.getArguments().stream().map(e -> e.accept(this)).collect(Collectors.toList());
 
-        // TODO Check if method matches
-        // TODO Return whatever it matches with
+        if (!(exp instanceof IdentifierType)) {
+            error(
+                    expression.getObject().getStart(), expression.getObject().getStop(),
+                    "Type %s does not have a method %s(%s).",
+                    exp.getName(), expression.getMethod(),
+                    arguments.stream().map(Type::getName).collect(Collectors.toList())
+            );
+            return new UnknownType();
+        }
+
+        for (Identifier c = ((IdentifierType) exp).getIdentifier(); c != null; c = classes.get(c).getSuperclass()) {
+            List<Pair<MethodDeclaration, Integer>> matches = new ArrayList<>();
+            for (MethodDeclaration method : classes.get(c).getMethods()) {
+                if (method.getName().equals(expression.getMethod()) && method.getParameters().size() == arguments.size()) {
+                    int match = 0;
+                    for (int i = 0; i < arguments.size(); ++i) {
+                        int distance = arguments.get(i).conformsTo(method.getParameters().get(i).getType(), classes);
+                        if (distance == -1) {
+                            match = -1;
+                            break;
+                        } else {
+                            match += (1 << (i + 1)) * distance;
+                        }
+                    }
+
+                    if (match != -1) {
+                        matches.add(new Pair<>(method, match));
+                    }
+                }
+            }
+
+            if (matches.size() != 0) {
+                Pair<MethodDeclaration, Integer> min = matches.get(0);
+
+                for (Pair<MethodDeclaration, Integer> p : matches) {
+                    if (p.b < min.b) {
+                        min = p;
+                    }
+                }
+
+                return min.a.getType();
+            }
+        }
+
+        error(
+                expression.getStart(), expression.getStop(),
+                "Type %s does not have a method %s(%s).",
+                exp.getName(), expression.getMethod(),
+                String.join(", ", arguments.stream().map(Type::getName).collect(Collectors.toList()))
+        );
         return new UnknownType();
     }
 
@@ -393,8 +485,12 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(NewObject expression) {
-        // TODO Check if class exists
-        return new IdentifierType(expression.getClassName());
+        if (classes.containsKey(expression.getClassName())) {
+            return new IdentifierType(expression.getClassName());
+        }
+
+        error(expression.getStart(), expression.getStop(), "The type %s does not exist.", expression.getClassName());
+        return new UnknownType();
     }
 
     @Override

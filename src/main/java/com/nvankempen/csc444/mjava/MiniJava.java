@@ -22,8 +22,8 @@ public class MiniJava {
 
         if (!errorListener.hasSyntaxErrors()) {
             Program program = (new VisitorParser()).parse(tree);
-            PrintVisitor print = new PrintVisitor(System.out);
-            print.visit(program);
+//            PrintVisitor print = new PrintVisitor(System.out);
+//            print.visit(program);
             TypeCheckVisitor check = new TypeCheckVisitor();
             check.visit(program);
         }

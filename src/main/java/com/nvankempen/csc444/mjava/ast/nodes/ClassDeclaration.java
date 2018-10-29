@@ -50,6 +50,10 @@ public class ClassDeclaration {
         return superclass;
     }
 
+    public void setSuperclass(Identifier superclass) {
+        this.superclass = superclass;
+    }
+
     public boolean hasSuperClass() {
         return superclass != null;
     }

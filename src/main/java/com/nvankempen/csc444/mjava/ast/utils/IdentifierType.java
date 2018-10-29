@@ -16,6 +16,8 @@ public class IdentifierType extends Type {
 
     @Override
     public String getName() {
-        return getIdentifier().getName();
+        if (type == null) return null;
+
+        return type.getName();
     }
 }
