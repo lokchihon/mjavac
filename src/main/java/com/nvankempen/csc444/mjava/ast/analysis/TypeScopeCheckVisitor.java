@@ -14,8 +14,20 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     private Map<Identifier, Type> method;
     private Map<Identifier, Type> parameters;
 
+    private void setUnknown(Identifier name) {
+        if (parameters.containsKey(name)) {
+            parameters.put(name, new UnknownType());
+        }
+
+        if (method.containsKey(name)) {
+            method.put(name, new UnknownType());
+        }
+
+        instance.put(name, new UnknownType());
+    }
+
     private void error(Token start, Token stop, String format, Object... args) {
-        if (start == stop) {
+        if (stop == null || start.getLine() == stop.getLine()) {
             error(start, format, args);
         } else {
             System.out.printf(String.format("[%d:%d - %d:%d] %s %n",
@@ -27,7 +39,11 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
     }
 
     private void error(Token token, String format, Object... args) {
-        System.out.printf(String.format("[%d:%d] %s %n", token.getLine(), token.getCharPositionInLine(), format), args);
+        System.out.printf(String.format("[%d:%d] %s %n",
+                token.getLine(),
+                token.getCharPositionInLine(),
+                format
+        ), args);
     }
 
     @Override
@@ -149,6 +165,7 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
         if (!variable.equals(expression)) {
             error(statement.getStart(), statement.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), variable.getName());
+            setUnknown(statement.getVariable());
         }
 
         return null;
@@ -359,8 +376,22 @@ public class TypeScopeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(Identifier identifier) {
-        // TODO Lookup identifier and return type.
-        return new UnknownType();
+        Type type;
+
+        if (parameters.containsKey(identifier)) {
+            type = parameters.get(identifier);
+        } else if (method.containsKey(identifier)) {
+            type = method.get(identifier);
+        } else {
+            type = instance.get(identifier);
+        }
+
+        if (type == null) {
+            error(identifier.getStart(), "The variable %s has not been declared.", identifier);
+            return new UnknownType();
+        }
+
+        return type;
     }
 
     @Override

@@ -7,16 +7,10 @@ import org.antlr.v4.runtime.Token;
 
 public class Identifier extends Expression {
     private String name;
-    private Token token;
-
-    public Token getToken() {
-        return token;
-    }
 
     public Identifier(String name, Token token) {
-        super(null, null);
+        super(token, null);
         this.name = name;
-        this.token = token;
     }
 
     public void accept(Visitor v) {

@@ -12,7 +12,6 @@ import java.io.IOException;
 public class MiniJava {
 
     public static void main(String[] args) throws IOException {
-
         MiniJavaParser parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromStream(System.in))));
 
         ErrorListener errorListener = new ErrorListener();
