@@ -52,9 +52,9 @@ public class PrintVisitor implements Visitor {
     public void visit(ClassDeclaration declaration) {
         print("public class %s ", declaration.getName());
         if (declaration.hasSuperClass()) {
-            printni("extends %s ", declaration.getSuperclass().getName());
+            printlnni("extends %s ", declaration.getSuperclass().getName());
         }
-        printlnni("{");
+        println("{");
 
         ++indent;
         for (VarDeclaration variable : declaration.getVariables()) {
@@ -84,8 +84,14 @@ public class PrintVisitor implements Visitor {
     @Override
     public void visit(MethodDeclaration declaration) {
         print("public %s %s (", declaration.getType().getName(), declaration.getName());
-        printni("params");
-        printlnni(") {");
+        for (int i = 0; i < declaration.getParameters().size(); ++i) {
+            declaration.getParameters().get(i).accept(this);
+            if (i != declaration.getParameters().size() - 1) {
+                printni(", ");
+            }
+        }
+        printlnni(")");
+        println("{");
 
         ++indent;
         for (VarDeclaration variable : declaration.getVariables()) {
@@ -275,7 +281,8 @@ public class PrintVisitor implements Visitor {
         println("public class %s {", main.getName());
 
         ++indent;
-        println("public static void main(String[] args) {");
+        println("public static void main(String[] args)");
+        println("{");
         ++indent;
         main.getStatement().accept(this);
         --indent;
