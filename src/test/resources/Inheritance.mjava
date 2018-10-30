@@ -41,6 +41,22 @@ class B extends C {
 
 }
 
-class C extends A {
+class C extends A { // Cycle
 
+}
+
+class D extends Z { // There is no Z
+
+}
+
+class E {
+    public E hi() {
+        return new E();
+    }
+}
+
+class F extends E {
+    public F hi() { // should have no error
+        return new F();
+    }
 }

@@ -28,7 +28,7 @@ public class TypeCheckTest {
 
         ParseTree tree = parser.program();
 
-        assertFalse(errorListener.hasSyntaxErrors(), "There were syntax errors in the test file.");
+        assertFalse(errorListener.hasSyntaxErrors(), String.format("There were syntax errors in the test file '%s'.", filename));
         return (new VisitorParser()).parse(tree);
     }
 
@@ -41,7 +41,8 @@ public class TypeCheckTest {
         check.visit(program);
 
         assertTrue(errors.atLine(36), "Type check should detect the cycle.");
-        assertEquals(1, errors.nb(), "Too many errors were detected.");
+        assertTrue(errors.atLine(48), "The superclass does not exist.");
+        assertEquals(2, errors.nb(), "Too many errors were detected.");
     }
 
     @Test
@@ -66,5 +67,8 @@ public class TypeCheckTest {
         check.visit(program);
 
         assertTrue(errors.atLine(3), "System.out.println can only use int.");
+        assertTrue(errors.atLine(11), "Duplicate method.");
+        assertTrue(errors.atLine(17), "Overload on return type.");
+
     }
 }

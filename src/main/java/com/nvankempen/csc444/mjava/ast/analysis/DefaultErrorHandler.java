@@ -7,7 +7,7 @@ public class DefaultErrorHandler implements ErrorHandler {
         if (stop == null || start.getLine() == stop.getLine()) {
             error(start, format, args);
         } else {
-            System.out.printf(String.format("[%d:%d - %d:%d] %s %n",
+            System.out.printf(String.format("[%d:%d - %d:%d] ERROR %s %n",
                     start.getLine(), start.getCharPositionInLine(),
                     stop.getLine(), stop.getCharPositionInLine(),
                     format

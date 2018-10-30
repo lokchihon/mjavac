@@ -4,4 +4,19 @@ class Main {
     }
 }
 
+class Test {
+    public int a() {
+        return 1;
+    }
+    public int a() { // Duplicate method
+        return 1;
+    }
+    public int b() {
+        return 1;
+    }
+    public boolean b() { // Overload on return
+        return true;
+    }
+}
+
 

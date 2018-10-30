@@ -88,7 +88,6 @@ public class TypeCheckVisitor implements TypeVisitor {
             }
         }
 
-        // TODO: Check if not overloading method on return type.
         List<MethodDeclaration> methods = declaration.getMethods();
         for (int i = 0; i < methods.size(); ++i) {
             for (int j = i + 1; j < methods.size(); ++j) {
@@ -104,10 +103,11 @@ public class TypeCheckVisitor implements TypeVisitor {
 
                     if (!different) {
                         errorHandler.error(
-                                methods.get(i).getStart(), methods.get(i).getStop(),
-                                "%s(%s) already exists.",
+                                methods.get(j).getStart(), methods.get(j).getStop(),
+                                "%s(%s) has already been declared line %d.",
                                 methods.get(i).getName(),
-                                String.join(", ", methods.get(i).getParameters().stream().map(x -> x.getType().getName()).collect(Collectors.toList()))
+                                String.join(", ", methods.get(i).getParameters().stream().map(x -> x.getType().getName()).collect(Collectors.toList())),
+                                methods.get(i).getStart().getLine()
                         );
 
                         methods.get(i).setType(new UnknownType());
@@ -297,7 +297,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         }
 
         if (!right.isInt()) {
-            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", right.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -317,7 +317,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         }
 
         if (!right.isInt()) {
-            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", right.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -337,7 +337,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         }
 
         if (!right.isInt()) {
-            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", right.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -357,7 +357,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         }
 
         if (!right.isInt()) {
-            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", right.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
