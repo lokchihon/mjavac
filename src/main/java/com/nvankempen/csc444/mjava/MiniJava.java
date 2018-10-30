@@ -12,9 +12,20 @@ import java.io.IOException;
 public class MiniJava {
 
     public static void main(String[] args) throws IOException {
-        MiniJavaParser parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromStream(System.in))));
 
-        ErrorListener errorListener = new ErrorListener();
+        if (args.length > 1) {
+            System.out.println("ERROR You may only specify one file to compile at a time.");
+            return;
+        }
+
+        MiniJavaParser parser;
+        if (args.length == 1) {
+            parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromFileName(args[0]))));
+        } else {
+            parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromStream(System.in))));
+        }
+
+        ParserErrorListener errorListener = new ParserErrorListener();
         parser.removeErrorListeners();
         parser.addErrorListener(errorListener);
 
@@ -22,8 +33,8 @@ public class MiniJava {
 
         if (!errorListener.hasSyntaxErrors()) {
             Program program = (new VisitorParser()).parse(tree);
-//            PrintVisitor print = new PrintVisitor(System.out);
-//            print.visit(program);
+            PrintVisitor print = new PrintVisitor(System.out);
+            print.visit(program);
             TypeCheckVisitor check = new TypeCheckVisitor();
             check.visit(program);
         }

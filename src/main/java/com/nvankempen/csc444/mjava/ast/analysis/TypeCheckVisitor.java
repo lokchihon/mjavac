@@ -2,7 +2,6 @@ package com.nvankempen.csc444.mjava.ast.analysis;
 
 import com.nvankempen.csc444.mjava.ast.nodes.*;
 import com.nvankempen.csc444.mjava.ast.utils.*;
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.Pair;
 
 import java.util.*;
@@ -10,11 +9,16 @@ import java.util.stream.Collectors;
 
 public class TypeCheckVisitor implements TypeVisitor {
 
+    private ErrorHandler errorHandler = new DefaultErrorHandler();
     private ClassDeclaration current;
     private Map<Identifier, ClassDeclaration> classes;
     private Map<Identifier, Type> instance;
     private Map<Identifier, Type> method;
     private Map<Identifier, Type> parameters;
+
+    public void setErrorHandler(ErrorHandler handler) {
+        errorHandler = handler;
+    }
 
     private void setUnknown(Identifier name) {
         if (parameters.containsKey(name)) {
@@ -28,24 +32,12 @@ public class TypeCheckVisitor implements TypeVisitor {
         instance.put(name, new UnknownType());
     }
 
-    private void error(Token start, Token stop, String format, Object... args) {
-        if (stop == null || start.getLine() == stop.getLine()) {
-            error(start, format, args);
-        } else {
-            System.out.printf(String.format("[%d:%d - %d:%d] %s %n",
-                    start.getLine(), start.getCharPositionInLine(),
-                    stop.getLine(), stop.getCharPositionInLine(),
-                    format
-            ), args);
+    private ClassDeclaration getSuperClass(ClassDeclaration sub) {
+        if (!sub.hasSuperClass()) {
+            return null;
         }
-    }
 
-    private void error(Token token, String format, Object... args) {
-        System.out.printf(String.format("[%d:%d] ERROR %s %n",
-                token.getLine(),
-                token.getCharPositionInLine(),
-                format
-        ), args);
+        return classes.get(sub.getSuperclass());
     }
 
     @Override
@@ -55,9 +47,9 @@ public class TypeCheckVisitor implements TypeVisitor {
         // Build type table
         for (ClassDeclaration declaration : program.getClasses()) {
             if (classes.containsKey(declaration.getName())) {
-                error(declaration.getName().getStart(), "The class %s has already been declared line %d.", classes.get(declaration.getName()).getName().getStart().getLine());
+                errorHandler.error(declaration.getName().getStart(), "The class %s has already been declared line %d.", classes.get(declaration.getName()).getName().getStart().getLine());
             } else if (program.getMainClass().getName().equals(declaration.getName())) {
-                error(declaration.getName().getStart(), "The class %s has already been declared line %d.", program.getMainClass().getName().getStart().getLine());
+                errorHandler.error(declaration.getName().getStart(), "The class %s has already been declared line %d.", program.getMainClass().getName().getStart().getLine());
             } else {
                 classes.put(declaration.getName(), declaration);
             }
@@ -72,13 +64,15 @@ public class TypeCheckVisitor implements TypeVisitor {
     @Override
     public Type visit(ClassDeclaration declaration) {
         if (declaration.hasSuperClass() && !classes.containsKey(declaration.getSuperclass())) {
-            error(declaration.getSuperclass().getStart(), "The class %s does not exist.", declaration.getSuperclass().getName());
+            errorHandler.error(declaration.getSuperclass().getStart(), "The class %s does not exist.", declaration.getSuperclass().getName());
             declaration.setSuperclass(null);
         }
 
-        if (declaration.hasSuperClass() && declaration.getSuperclass().getName().equals(declaration.getName().getName())) {
-            error(declaration.getSuperclass().getStart(), "A class cannot be a child of itself.");
-            declaration.setSuperclass(null);
+        for (ClassDeclaration sup = getSuperClass(declaration); sup != null; sup = getSuperClass(sup)) {
+            if (declaration.getName().equals(sup.getName())) {
+                errorHandler.error(declaration.getSuperclass().getStart(), "Inheritance cycles are not allowed.");
+                declaration.setSuperclass(null);
+            }
         }
 
         current = declaration;
@@ -87,13 +81,14 @@ public class TypeCheckVisitor implements TypeVisitor {
         for (VarDeclaration variable : declaration.getVariables()) {
             variable.accept(this);
             if (instance.containsKey(variable.getName())) {
-                error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
+                errorHandler.error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
                 setUnknown(variable.getName());
             } else {
                 instance.put(variable.getName(), variable.getType());
             }
         }
 
+        // TODO: Check if not overloading method on return type.
         List<MethodDeclaration> methods = declaration.getMethods();
         for (int i = 0; i < methods.size(); ++i) {
             for (int j = i + 1; j < methods.size(); ++j) {
@@ -108,7 +103,7 @@ public class TypeCheckVisitor implements TypeVisitor {
                     }
 
                     if (!different) {
-                        error(
+                        errorHandler.error(
                                 methods.get(i).getStart(), methods.get(i).getStop(),
                                 "%s(%s) already exists.",
                                 methods.get(i).getName(),
@@ -138,7 +133,7 @@ public class TypeCheckVisitor implements TypeVisitor {
                 }
             }
 
-            error(declaration.getStart(), declaration.getStop(), "The type %s does not exist.", declaration.getType().getName());
+            errorHandler.error(declaration.getStart(), declaration.getStop(), "The type %s does not exist.", declaration.getType().getName());
             declaration.setType(new UnknownType());
             return null;
         }
@@ -160,7 +155,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         for (Formal parameter : declaration.getParameters()) {
             parameter.accept(this);
             if (parameters.containsKey(parameter.getName())) {
-                error(parameter.getStart(), parameter.getStop(), "Parameter %s has already been defined in this scope.", parameter.getName());
+                errorHandler.error(parameter.getStart(), parameter.getStop(), "Parameter %s has already been defined in this scope.", parameter.getName());
             } else {
                 parameters.put(parameter.getName(), parameter.getType());
             }
@@ -169,7 +164,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         for (VarDeclaration variable : declaration.getVariables()) {
             variable.accept(this);
             if (parameters.containsKey(variable.getName()) || method.containsKey(variable.getName())) {
-                error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
+                errorHandler.error(variable.getStart(), variable.getStop(), "Variable %s has already been defined in this scope.", variable.getName());
             } else {
                 method.put(variable.getName(), variable.getType());
             }
@@ -181,7 +176,7 @@ public class TypeCheckVisitor implements TypeVisitor {
 
         Type ret = declaration.getReturn().accept(this);
         if (!ret.equals(declaration.getType())) {
-            error(declaration.getReturn().getStart(), declaration.getReturn().getStop(), "Method declares returning a(n) %s, but returns a(n) %s.", declaration.getType().getName(), ret.getName());
+            errorHandler.error(declaration.getReturn().getStart(), declaration.getReturn().getStop(), "Method declares returning a(n) %s, but returns a(n) %s.", declaration.getType().getName(), ret.getName());
             declaration.setType(new UnknownType());
         }
 
@@ -200,7 +195,7 @@ public class TypeCheckVisitor implements TypeVisitor {
     public Type visit(If statement) {
         Type condition = statement.getCondition().accept(this);
         if (!condition.isBoolean()) {
-            error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
+            errorHandler.error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
         }
 
         statement.getTrueStatement().accept(this);
@@ -213,7 +208,7 @@ public class TypeCheckVisitor implements TypeVisitor {
     public Type visit(While statement) {
         Type condition = statement.getCondition().accept(this);
         if (!condition.isBoolean()) {
-            error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
+            errorHandler.error(statement.getCondition().getStart(), statement.getCondition().getStop(), "Expected a boolean. Got a(n) %s.", condition.getName());
         }
 
         statement.getStatement().accept(this);
@@ -224,7 +219,7 @@ public class TypeCheckVisitor implements TypeVisitor {
     public Type visit(Print statement) {
         Type type = statement.getExpression().accept(this);
         if (!type.isInt()) {
-            error(statement.getExpression().getStart(), statement.getExpression().getStop(), "Expected an integer. Got a(n) %s.", type.getName());
+            errorHandler.error(statement.getExpression().getStart(), statement.getExpression().getStop(), "Expected an integer. Got a(n) %s.", type.getName());
         }
 
         return null;
@@ -232,14 +227,11 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(VarAssign statement) {
-        // TODO
-        // Currently, Test t = new Test2(); t.test(); will match Test() in the Test class even if overriden in Test2.
-        // Java does it differently, and calls Test2::test.
         Type variable = statement.getVariable().accept(this);
         Type expression = statement.getValue().accept(this);
 
         if (expression.conformsTo(variable, classes) == -1) {
-            error(statement.getStart(), statement.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), variable.getName());
+            errorHandler.error(statement.getStart(), statement.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), variable.getName());
             setUnknown(statement.getVariable());
         }
 
@@ -253,13 +245,13 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type value = statement.getValue().accept(this);
 
         if (!array.isIntArray()) {
-            error(statement.getArray().getStart(), statement.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+            errorHandler.error(statement.getArray().getStart(), statement.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
         }
         if (!index.isInt()) {
-            error(statement.getIndex().getStart(), statement.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
+            errorHandler.error(statement.getIndex().getStart(), statement.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
         }
         if (!value.isInt()) {
-            error(statement.getValue().getStart(), statement.getValue().getStop(), "Expected an integer. Got a(n) %s.", value.getName());
+            errorHandler.error(statement.getValue().getStart(), statement.getValue().getStop(), "Expected an integer. Got a(n) %s.", value.getName());
         }
 
         return null;
@@ -271,11 +263,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type right = expression.getRight().accept(this);
 
         if (!left.isBoolean()) {
-            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected a boolean. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected a boolean. Got a(n) %s.", left.getName());
         }
 
         if (!right.isBoolean()) {
-            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected a boolean. Got a(n) %s.", right.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected a boolean. Got a(n) %s.", right.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -289,7 +281,7 @@ public class TypeCheckVisitor implements TypeVisitor {
     public Type visit(Not expression) {
         Type type = expression.getExpression().accept(this);
         if (!type.isBoolean()) {
-            error(expression.getExpression().getStart(), expression.getExpression().getStop(), "Expected a boolean. Got a(n) %s.", type.getName());
+            errorHandler.error(expression.getExpression().getStart(), expression.getExpression().getStop(), "Expected a boolean. Got a(n) %s.", type.getName());
             return new UnknownType();
         }
         return new BooleanType();
@@ -301,11 +293,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type right = expression.getRight().accept(this);
 
         if (!left.isInt()) {
-            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (!right.isInt()) {
-            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -321,11 +313,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type right = expression.getRight().accept(this);
 
         if (!left.isInt()) {
-            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (!right.isInt()) {
-            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -341,11 +333,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type right = expression.getRight().accept(this);
 
         if (!left.isInt()) {
-            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (!right.isInt()) {
-            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -361,11 +353,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type right = expression.getRight().accept(this);
 
         if (!left.isInt()) {
-            error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getLeft().getStart(), expression.getLeft().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (!right.isInt()) {
-            error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
+            errorHandler.error(expression.getRight().getStart(), expression.getRight().getStop(), "Expected an integer. Got a(n) %s.", left.getName());
         }
 
         if (right.isBoolean() && left.isBoolean()) {
@@ -381,11 +373,11 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type index = expression.getIndex().accept(this);
 
         if (!array.isIntArray()) {
-            error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+            errorHandler.error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
         }
 
         if (!index.isInt()) {
-            error(expression.getIndex().getStart(), expression.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
+            errorHandler.error(expression.getIndex().getStart(), expression.getIndex().getStop(), "Expected an integer. Got a(n) %s.", index.getName());
         }
 
         if (array.isIntArray() && index.isInt()) {
@@ -400,7 +392,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type array = expression.getArray().accept(this);
 
         if (!array.isIntArray()) {
-            error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
+            errorHandler.error(expression.getArray().getStart(), expression.getArray().getStop(), "Expected an integer array. Got a(n) %s.", array.getName());
             return new UnknownType();
         }
 
@@ -412,8 +404,12 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type exp = expression.getObject().accept(this);
         List<Type> arguments = expression.getArguments().stream().map(e -> e.accept(this)).collect(Collectors.toList());
 
+        if (exp.isUnknown()) {
+            return new UnknownType();
+        }
+
         if (!(exp instanceof IdentifierType)) {
-            error(
+            errorHandler.error(
                     expression.getObject().getStart(), expression.getObject().getStop(),
                     "Type %s does not have a method %s(%s).",
                     exp.getName(), expression.getMethod(),
@@ -456,7 +452,7 @@ public class TypeCheckVisitor implements TypeVisitor {
             }
         }
 
-        error(
+        errorHandler.error(
                 expression.getStart(), expression.getStop(),
                 "Type %s does not have a method %s(%s).",
                 exp.getName(), expression.getMethod(),
@@ -480,7 +476,7 @@ public class TypeCheckVisitor implements TypeVisitor {
         Type length = expression.getLength().accept(this);
 
         if (!length.isInt()) {
-            error(expression.getLength().getStart(), expression.getLength().getStop(), "Expected an integer. Got a(n) %s.", length.getName());
+            errorHandler.error(expression.getLength().getStart(), expression.getLength().getStop(), "Expected an integer. Got a(n) %s.", length.getName());
         }
 
         return new IntegerArrayType();
@@ -492,7 +488,7 @@ public class TypeCheckVisitor implements TypeVisitor {
             return new IdentifierType(expression.getClassName());
         }
 
-        error(expression.getStart(), expression.getStop(), "The type %s does not exist.", expression.getClassName());
+        errorHandler.error(expression.getStart(), expression.getStop(), "The type %s does not exist.", expression.getClassName());
         return new UnknownType();
     }
 
@@ -503,18 +499,27 @@ public class TypeCheckVisitor implements TypeVisitor {
 
     @Override
     public Type visit(Identifier identifier) {
-        Type type;
+        Type type = null;
 
         if (parameters.containsKey(identifier)) {
             type = parameters.get(identifier);
         } else if (method.containsKey(identifier)) {
             type = method.get(identifier);
-        } else {
+        } else if (instance.containsKey(identifier)) {
             type = instance.get(identifier);
+        } else {
+            for (ClassDeclaration sub = current; sub != null && type == null; sub = getSuperClass(sub)) {
+                for (VarDeclaration variable : sub.getVariables()) {
+                    if (variable.getName().equals(identifier)) {
+                        type = variable.getType();
+                        break;
+                    }
+                }
+            }
         }
 
         if (type == null) {
-            error(identifier.getStart(), "The variable %s has not been declared.", identifier);
+            errorHandler.error(identifier.getStart(), "The variable %s has not been declared.", identifier);
             return new UnknownType();
         }
 
@@ -532,7 +537,7 @@ public class TypeCheckVisitor implements TypeVisitor {
                 }
             }
 
-            error(formal.getStart(), formal.getStop(), "The type %s does not exist.", formal.getType().getName());
+            errorHandler.error(formal.getStart(), formal.getStop(), "The type %s does not exist.", formal.getType().getName());
             formal.setType(new UnknownType());
             return null;
         }

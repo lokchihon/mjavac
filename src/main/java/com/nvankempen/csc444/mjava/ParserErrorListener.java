@@ -2,7 +2,7 @@ package com.nvankempen.csc444.mjava;
 
 import org.antlr.v4.runtime.*;
 
-public class ErrorListener extends BaseErrorListener {
+public class ParserErrorListener extends BaseErrorListener {
 
     private boolean error = false;
 
