@@ -36,6 +36,14 @@ public abstract class Type {
         return getName().hashCode();
     }
 
+    public String toDescriptor() {
+        if (this.isInt()) return "I";
+        if (this.isBoolean()) return "B";
+        if (this.isIntArray()) return "[I";
+
+        return "L" + getName() + ";";
+    }
+
     /**
      * Checks if this type is equal or a subclass of the given type.
      * @param sup the potential superclass.

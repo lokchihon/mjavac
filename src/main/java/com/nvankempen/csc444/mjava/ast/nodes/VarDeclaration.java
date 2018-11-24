@@ -9,6 +9,14 @@ public abstract class VarDeclaration {
     private Identifier name;
     private Token start, stop;
 
+    public boolean hasValue() {
+        return this instanceof UntypedVarDeclaration;
+    }
+
+    public Expression getValue() {
+        return ((UntypedVarDeclaration) this).getValue();
+    }
+
     public Token getStart() {
         return start;
     }

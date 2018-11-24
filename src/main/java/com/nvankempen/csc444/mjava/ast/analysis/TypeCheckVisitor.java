@@ -20,6 +20,10 @@ public class TypeCheckVisitor implements TypeVisitor {
         errorHandler = handler;
     }
 
+    public ErrorHandler getErrorHandler() {
+        return errorHandler;
+    }
+
     private void setUnknown(Identifier name) {
         if (parameters.containsKey(name)) {
             parameters.put(name, new UnknownType());
@@ -448,6 +452,8 @@ public class TypeCheckVisitor implements TypeVisitor {
                     }
                 }
 
+                expression.setDeclaration(min.a);
+                expression.setObjectType(classes.get(c));
                 return min.a.getType();
             }
         }
@@ -458,6 +464,7 @@ public class TypeCheckVisitor implements TypeVisitor {
                 exp.getName(), expression.getMethod(),
                 String.join(", ", arguments.stream().map(Type::getName).collect(Collectors.toList()))
         );
+
         return new UnknownType();
     }
 

@@ -3,6 +3,7 @@ package com.nvankempen.csc444.mjava.ast.nodes;
 import com.nvankempen.csc444.mjava.ast.analysis.TypeVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.Visitor;
 import com.nvankempen.csc444.mjava.ast.utils.Type;
+import com.nvankempen.csc444.mjava.codegen.CodeGenerationVisitor;
 import org.antlr.v4.runtime.Token;
 
 public class Identifier extends Expression {
@@ -38,5 +39,9 @@ public class Identifier extends Expression {
     @Override
     public String toString() {
         return name;
+    }
+
+    public void accept(CodeGenerationVisitor v) {
+        v.visit(this);
     }
 }

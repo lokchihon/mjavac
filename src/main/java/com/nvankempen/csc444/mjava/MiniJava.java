@@ -1,8 +1,8 @@
 package com.nvankempen.csc444.mjava;
 
-import com.nvankempen.csc444.mjava.ast.analysis.PrintVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.TypeCheckVisitor;
-import com.nvankempen.csc444.mjava.ast.nodes.Program;
+import com.nvankempen.csc444.mjava.ast.nodes.*;
+import com.nvankempen.csc444.mjava.codegen.CodeGenVisitor;
 import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -33,10 +33,15 @@ public class MiniJava {
 
         if (!errorListener.hasSyntaxErrors()) {
             Program program = (new VisitorParser()).parse(tree);
-            PrintVisitor print = new PrintVisitor(System.out);
-            print.visit(program);
+//            PrintVisitor print = new PrintVisitor(System.out);
+//            print.visit(program);
             TypeCheckVisitor check = new TypeCheckVisitor();
             check.visit(program);
+
+            if (!check.getErrorHandler().hasErrors()) {
+                CodeGenVisitor v = new CodeGenVisitor();
+                v.visit(program);
+            }
         }
     }
 }
