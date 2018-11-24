@@ -1,5 +1,7 @@
 package com.nvankempen.csc444.mjava;
 
+import com.beust.jcommander.JCommander;
+import com.nvankempen.csc444.mjava.ast.analysis.PrintVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.TypeCheckVisitor;
 import com.nvankempen.csc444.mjava.ast.nodes.*;
 import com.nvankempen.csc444.mjava.codegen.CodeGenVisitor;
@@ -7,22 +9,40 @@ import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import javax.swing.*;
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Objects;
 
 public class MiniJava {
 
     public static void main(String[] args) throws IOException {
 
-        if (args.length > 1) {
-            System.out.println("ERROR You may only specify one file to compile at a time.");
-            return;
-        }
+        CLIParameters params = new CLIParameters();
+        JCommander.newBuilder().addObject(params).build().parse(args);
 
-        MiniJavaParser parser;
-        if (args.length == 1) {
-            parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromFileName(args[0]))));
+        Path input  = new File(params.getFilename()).toPath();
+        Path output = new File(params.getOutputDirectory()).toPath();
+
+        MiniJavaParser parser = new MiniJavaParser(
+                new CommonTokenStream(
+                        new MiniJavaLexer(
+                                CharStreams.fromPath(input)
+                        )
+                )
+        );
+
+        if (!Files.exists(output)) {
+            Files.createDirectories(output);
         } else {
-            parser = new MiniJavaParser(new CommonTokenStream(new MiniJavaLexer(CharStreams.fromStream(System.in))));
+            if (!Files.isDirectory(output)) {
+                System.out.println("[ERROR] The MJava compiler needs a valid directory to output generated files!");
+                return;
+            }
         }
 
         ParserErrorListener errorListener = new ParserErrorListener();
@@ -32,15 +52,28 @@ public class MiniJava {
         ParseTree tree = parser.program();
 
         if (!errorListener.hasSyntaxErrors()) {
+
             Program program = (new VisitorParser()).parse(tree);
-//            PrintVisitor print = new PrintVisitor(System.out);
-//            print.visit(program);
             TypeCheckVisitor check = new TypeCheckVisitor();
             check.visit(program);
-
             if (!check.getErrorHandler().hasErrors()) {
-                CodeGenVisitor v = new CodeGenVisitor();
+
+                if (params.prettify()) {
+                    PrintStream out = new PrintStream(new File(output.toFile(), input.getFileName().toString() + ".pretty"));
+                    PrintVisitor print = new PrintVisitor(out);
+                    print.visit(program);
+                    out.close();
+                }
+
+                CodeGenVisitor v = new CodeGenVisitor(output);
                 v.visit(program);
+                v.getGeneratedFiles().forEach(f -> {
+                    try {
+                        JasminUtil.assemble(f, output);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         }
     }

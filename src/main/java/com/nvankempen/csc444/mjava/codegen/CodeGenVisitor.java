@@ -7,7 +7,10 @@ import org.antlr.v4.runtime.misc.Pair;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class CodeGenVisitor implements CodeGenerationVisitor {
 
@@ -17,7 +20,9 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
     // Code generation constants
     private static final String INDENT = "\t";
 
-    private PrintStream out = System.out;
+    private Path outputdir;
+    private List<Path> generated = new ArrayList<>();
+    private PrintStream out;
     private HashMap<Identifier, Pair<Integer, Type>> locals = new HashMap<>();
 
     // References
@@ -28,6 +33,14 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
     private int indent;
     private int labels;
     private int local;
+
+    public CodeGenVisitor(Path outputdir) {
+        this.outputdir = outputdir;
+    }
+
+    public List<Path> getGeneratedFiles() {
+        return generated;
+    }
 
     private void println(String format, Object... args) {
         for (int i = 0; i < indent; ++i) {
@@ -321,11 +334,15 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
         cprogram = declaration;
 
         try {
-            out = new PrintStream(new File("./output/" + declaration.getMainClass().getName().getName() + ".j"));
+            Path file = new File(outputdir.toFile(), declaration.getMainClass().getName().getName() + ".j").toPath();
+            generated.add(file);
+            out = new PrintStream(file.toFile());
             declaration.getMainClass().accept(this);
             out.close();
             for (ClassDeclaration c : declaration.getClasses()) {
-                out = new PrintStream(new File("./output/" + c.getName().getName() + ".j"));
+                file = new File(outputdir.toFile(), c.getName().getName() + ".j").toPath();
+                generated.add(file);
+                out = new PrintStream(file.toFile());
                 c.accept(this);
                 out.close();
             }
