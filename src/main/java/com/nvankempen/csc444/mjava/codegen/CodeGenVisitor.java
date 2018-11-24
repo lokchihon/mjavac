@@ -15,7 +15,7 @@ import java.util.List;
 public class CodeGenVisitor implements CodeGenerationVisitor {
 
     // Language constants
-    private static final int METHOD_MAX_STACK_VARIABLES = 200;
+    private static final int METHOD_MAX_STACK_SIZE = 200;
 
     // Code generation constants
     private static final String INDENT = "\t";
@@ -366,7 +366,7 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
 
         println(".method public static main([Ljava/lang/String;)V");
         ++indent;
-            println(".limit stack %d", METHOD_MAX_STACK_VARIABLES);
+            println(".limit stack %d", METHOD_MAX_STACK_SIZE);
             println(".limit locals 1");
             declaration.getStatement().accept(this);
             println("return");
@@ -386,10 +386,13 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
         // Constructor
         println(".method public <init>()V");
         ++indent;
+            println(".limit stack %d", METHOD_MAX_STACK_SIZE);
+            println(".limit locals 1");
             println("aload_0");
             println("invokespecial %s/<init>()V", declaration.hasSuperClass() ? declaration.getSuperclass().getName() : "java/lang/Object");
             declaration.getVariables().forEach(v -> {
                 if (v.hasValue()) {
+                    println("aload_0");
                     v.getValue().accept(this);
                     println("putfield %s/%s %s", declaration.getName().getName(), v.getName().getName(), v.getType().toDescriptor());
                 }
@@ -414,7 +417,7 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
         );
 
         ++indent;
-        println(".limit stack %d", METHOD_MAX_STACK_VARIABLES);
+        println(".limit stack %d", METHOD_MAX_STACK_SIZE);
         println(".limit locals %d", declaration.getParameters().size() + declaration.getVariables().size() + 1);
 
         int methodlab = ++labels;
