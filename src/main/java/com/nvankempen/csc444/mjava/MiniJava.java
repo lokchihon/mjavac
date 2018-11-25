@@ -67,6 +67,13 @@ public class MiniJava {
 
                 CodeGenVisitor v = new CodeGenVisitor(output);
                 v.visit(program);
+                v.getGeneratedFiles().forEach(f -> {
+                    try {
+                        JasminUtil.assemble(f, output);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                });
             }
         }
     }

@@ -15,14 +15,6 @@
     <artifactId>mjavac</artifactId>
     <version>1.0</version>
 
-    <repositories>
-        <repository>
-            <id>soot-snapshot</id>
-            <name>soot snapshots</name>
-            <url>https://soot-build.cs.uni-paderborn.de/nexus/repository/soot-snapshot/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -31,9 +23,9 @@
         </dependency>
 
         <dependency>
-            <groupId>ca.mcgill.sable</groupId>
-            <artifactId>soot</artifactId>
-            <version>3.1.0-SNAPSHOT</version>
+            <groupId>jasmin</groupId>
+            <artifactId>jasmin</artifactId>
+            <version>2.4</version>
         </dependency>
 
         <dependency>
