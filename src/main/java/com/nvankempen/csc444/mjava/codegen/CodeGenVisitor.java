@@ -3,10 +3,9 @@ package com.nvankempen.csc444.mjava.codegen;
 import com.nvankempen.csc444.mjava.ast.nodes.*;
 import com.nvankempen.csc444.mjava.ast.utils.Type;
 import org.antlr.v4.runtime.misc.Pair;
+import soot.util.JasminOutputStream;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +20,6 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
     private static final String INDENT = "\t";
 
     private Path outputdir;
-    private List<Path> generated = new ArrayList<>();
     private PrintStream out;
     private HashMap<Identifier, Pair<Integer, Type>> locals = new HashMap<>();
 
@@ -36,10 +34,6 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
 
     public CodeGenVisitor(Path outputdir) {
         this.outputdir = outputdir;
-    }
-
-    public List<Path> getGeneratedFiles() {
-        return generated;
     }
 
     private void println(String format, Object... args) {
@@ -334,19 +328,19 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
         cprogram = declaration;
 
         try {
-            Path file = new File(outputdir.toFile(), declaration.getMainClass().getName().getName() + ".j").toPath();
-            generated.add(file);
-            out = new PrintStream(file.toFile());
+            Path file = new File(outputdir.toFile(), declaration.getMainClass().getName().getName() + ".class").toPath();
+            out = new PrintStream(new JasminOutputStream(new FileOutputStream(file.toFile())));
             declaration.getMainClass().accept(this);
+            out.flush();
             out.close();
             for (ClassDeclaration c : declaration.getClasses()) {
-                file = new File(outputdir.toFile(), c.getName().getName() + ".j").toPath();
-                generated.add(file);
-                out = new PrintStream(file.toFile());
+                file = new File(outputdir.toFile(), c.getName().getName() + ".class").toPath();
+                out = new PrintStream(new JasminOutputStream(new FileOutputStream(file.toFile())));
                 c.accept(this);
+                out.flush();
                 out.close();
             }
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
