@@ -9,14 +9,11 @@ import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 
 public class MiniJava {
 

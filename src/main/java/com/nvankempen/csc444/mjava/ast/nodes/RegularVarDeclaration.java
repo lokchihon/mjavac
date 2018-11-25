@@ -8,8 +8,8 @@ import org.antlr.v4.runtime.Token;
 public class RegularVarDeclaration extends VarDeclaration {
     private Type type;
 
-    public RegularVarDeclaration(Type type, Identifier name, Token start, Token stop) {
-        super(name, start, stop);
+    public RegularVarDeclaration(Type type, Identifier name, Expression value, Token start, Token stop) {
+        super(name, value, start, stop);
         this.type = type;
     }
 

@@ -7,14 +7,15 @@ import org.antlr.v4.runtime.Token;
 
 public abstract class VarDeclaration {
     private Identifier name;
+    private Expression value;
     private Token start, stop;
 
     public boolean hasValue() {
-        return this instanceof UntypedVarDeclaration;
+        return value != null;
     }
 
     public Expression getValue() {
-        return ((UntypedVarDeclaration) this).getValue();
+        return value;
     }
 
     public Token getStart() {
@@ -25,8 +26,9 @@ public abstract class VarDeclaration {
         return stop;
     }
 
-    public VarDeclaration(Identifier name, Token start, Token stop) {
+    public VarDeclaration(Identifier name, Expression value, Token start, Token stop) {
         this.name = name;
+        this.value = value;
         this.start = start;
         this.stop = stop;
     }

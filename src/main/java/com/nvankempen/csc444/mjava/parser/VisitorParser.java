@@ -103,7 +103,12 @@ public class VisitorParser extends Parser {
         public VarDeclaration visitTypedDeclaration(TypedDeclarationContext ctx) {
             Type type = ctx.type().accept(new TypeVisitor());
             Identifier name = new Identifier(ctx.IDENTIFIER().getText(), ctx.IDENTIFIER().getSymbol());
-            return new RegularVarDeclaration(type, name, ctx.start, ctx.stop);
+            if (ctx.EQ() == null) {
+                return new RegularVarDeclaration(type, name, null, ctx.start, ctx.stop);
+            } else {
+                Expression value = ctx.expression().accept(new ExpressionVisitor());
+                return new RegularVarDeclaration(type, name, value, ctx.start, ctx.stop);
+            }
         }
 
         @Override

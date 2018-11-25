@@ -71,7 +71,13 @@ public class PrintVisitor implements Visitor {
 
     @Override
     public void visit(RegularVarDeclaration declaration) {
-        println("%s %s;", declaration.getType().getName(), declaration.getName());
+        if (declaration.hasValue()) {
+            print("%s %s = ", declaration.getType().getName(), declaration.getName());
+            declaration.getValue().accept(this);
+            printlnni(";");
+        } else {
+            println("%s %s;", declaration.getType().getName(), declaration.getName());
+        }
     }
 
     @Override

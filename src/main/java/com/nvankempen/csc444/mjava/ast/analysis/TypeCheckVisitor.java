@@ -142,6 +142,15 @@ public class TypeCheckVisitor implements TypeVisitor {
             return null;
         }
 
+        if (declaration.hasValue()) {
+            Type expression = declaration.getValue().accept(this);
+
+            if (expression.conformsTo(type, classes) == -1) {
+                errorHandler.error(declaration.getStart(), declaration.getStop(), "Type mismatch. Trying to assign a(n) %s to a(n) %s variable.", expression.getName(), type.getName());
+                setUnknown(declaration.getName());
+            }
+        }
+
         return null;
     }
 
