@@ -43,7 +43,7 @@ LENGTH:             'length';
 THIS:               'this';
 
 BOOLEAN_LITERAL:    'true' | 'false';
-INTEGER_LITERAL:    [0-9]+;
+INTEGER_LITERAL:    '-'? [0-9]+;
 IDENTIFIER:         [a-zA-Z_$] [a-zA-Z0-9_$]*;
 
 WS:                 [ \t\r\n\u000C]+    -> skip;
