@@ -12,7 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-public class CodeGenVisitor implements CodeGenerationVisitor {
+public class JasminVisitor implements CodeGenerationVisitor {
 
     // Language constants
     private static final int METHOD_MAX_STACK_SIZE = 200;
@@ -34,7 +34,7 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
     private int labels;
     private int local;
 
-    public CodeGenVisitor(Path outputdir) {
+    public JasminVisitor(Path outputdir) {
         this.outputdir = outputdir;
     }
 

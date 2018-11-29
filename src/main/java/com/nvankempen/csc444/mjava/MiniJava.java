@@ -4,7 +4,7 @@ import com.beust.jcommander.JCommander;
 import com.nvankempen.csc444.mjava.ast.analysis.PrintVisitor;
 import com.nvankempen.csc444.mjava.ast.analysis.TypeCheckVisitor;
 import com.nvankempen.csc444.mjava.ast.nodes.*;
-import com.nvankempen.csc444.mjava.codegen.CodeGenVisitor;
+import com.nvankempen.csc444.mjava.codegen.JasminVisitor;
 import com.nvankempen.csc444.mjava.parser.VisitorParser;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -62,7 +62,7 @@ public class MiniJava {
                     out.close();
                 }
 
-                CodeGenVisitor v = new CodeGenVisitor(output);
+                JasminVisitor v = new JasminVisitor(output);
                 v.visit(program);
                 v.getGeneratedFiles().forEach(f -> {
                     try {
