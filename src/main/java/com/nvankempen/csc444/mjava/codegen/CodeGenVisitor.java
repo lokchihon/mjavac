@@ -229,7 +229,9 @@ public class CodeGenVisitor implements CodeGenerationVisitor {
 
         println("label%d:", elselab);
         ++indent;
-            statement.getFalseStatement().accept(this);
+            if (statement.hasFalseStatement()) {
+                statement.getFalseStatement().accept(this);
+            }
             println("goto label%d", donelab);
         --indent;
 
