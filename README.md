@@ -7,6 +7,10 @@ To use this compiler, clone this project, run `mvn clean package`, and then run
 
 The option `-p` will allow to generate a prettified version of the input code in the output directory (Pretty Print Visitor).
 
+## Added Feature
+
+The `var` keyword was added in addition to the basic MiniJava syntax. When declaring a variable, one can replace the type indicator with the `var` keyword and the compiler will automatically determine was the type of the variable must be.
+
 ### Example
 
 ```java
